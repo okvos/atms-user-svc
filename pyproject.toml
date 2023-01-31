@@ -2,7 +2,7 @@
 name = "user-service"
 version = "0.1.0"
 description = ""
-authors = ["A6e <A6E@users.noreply.github.com>"]
+authors = ["okvos <okvos@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
