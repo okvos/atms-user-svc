@@ -19,6 +19,14 @@ class Account:
     email_address: str
 
 
+@define
+class Profile:
+    user_id: int
+    username: str
+    bio: str
+    header_image_url: str
+
+
 async def encrypt_password(password: str) -> str:
     return (
         await get_running_loop().run_in_executor(
@@ -53,3 +61,14 @@ async def get_account_by_username(username: str) -> Account:
     if not user:
         raise AccountNotFound(f"Username: {username} not found")
     return Account(*user)
+
+
+async def get_profile_by_username(username: str) -> Profile:
+    profile = await select_one(
+        DbName.USER,
+        "select `user_id`, `username`, `bio`, `header_image_url` from profile where username = %s",
+        (username,),
+    )
+    if not profile:
+        raise AccountNotFound(f"Profile: {username} not found")
+    return Profile(*profile)
