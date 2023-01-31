@@ -1,6 +1,6 @@
 from aiohttp.web import Request, RouteTableDef
 
-from src.user.db_user import AccountNotFound, get_account_by_id
+from src.user.db_user import AccountNotFound, get_account_by_id, get_profile_by_username
 from src.user.models import APIResponse
 
 routes = RouteTableDef()
@@ -14,3 +14,13 @@ async def main(request: Request) -> APIResponse:
     except AccountNotFound:
         return APIResponse("User not found", error=True)
     return APIResponse({"user": user})
+
+
+@routes.get("/profile/{username}")
+async def main(request: Request) -> APIResponse:
+    username = str(request.match_info.get("username"))
+    try:
+        profile = await get_profile_by_username(username)
+    except AccountNotFound:
+        return APIResponse("Profile not found", error=True)
+    return APIResponse({"profile": profile})
