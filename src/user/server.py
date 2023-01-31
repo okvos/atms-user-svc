@@ -3,12 +3,12 @@ from asyncio import run
 
 import aiohttp_cors
 from aiohttp import web
+from dotenv import load_dotenv
 
 from src.user.db import DbName, create_pool
 from src.user.db_user import get_account_by_id
 from src.user.handlers import routes as app_routes
 from src.user.middleware import middlewares
-from dotenv import load_dotenv
 
 load_dotenv()
 

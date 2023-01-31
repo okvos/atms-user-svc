@@ -15,7 +15,7 @@ async def api_response(request: Request, handler) -> Response:
         resp = APIResponse("Invalid request", error=True)
     except Exception as e:
         status = 500
-        resp = APIResponse("Unknown error.", error=True)
+        resp = APIResponse(str(e), error=True)
 
     if resp.error:
         resp.success = False
