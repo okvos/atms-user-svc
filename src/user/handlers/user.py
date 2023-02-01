@@ -1,12 +1,14 @@
 from aiohttp.web import Request, RouteTableDef
 
-from src.user.db_user import AccountNotFound, get_account_by_id, get_profile_by_username
+from src.user.db_user import (AccountNotFound, get_account_by_id,
+                              get_profile_by_username)
+from src.user.handlers.handlers import api_route_get
 from src.user.models import APIResponse
 
 routes = RouteTableDef()
 
 
-@routes.get("/user/{id}")
+@api_route_get(routes, "/user/{id}")
 async def main(request: Request) -> APIResponse:
     user_id = int(request.match_info.get("id"))
     try:
@@ -16,7 +18,7 @@ async def main(request: Request) -> APIResponse:
     return APIResponse({"user": user})
 
 
-@routes.get("/profile/{username}")
+@api_route_get(routes, "/profile/{username}")
 async def main(request: Request) -> APIResponse:
     username = str(request.match_info.get("username"))
     try:
