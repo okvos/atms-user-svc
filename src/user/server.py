@@ -1,8 +1,11 @@
 import asyncio
 from asyncio import run
+from os import getenv
 
 import aiohttp_cors
 from aiohttp import web
+from aiohttp_session import setup
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from dotenv import load_dotenv
 
 from src.user.db import DbName, create_pool
@@ -16,7 +19,16 @@ load_dotenv()
 async def init():
     await create_pool(DbName.USER)
 
+    cookie_name = "atms_session_id"
+
     app = web.Application(middlewares=middlewares)
+    setup(
+        app,
+        EncryptedCookieStorage(
+            cookie_name=cookie_name,
+            secret_key=getenv("COOKIE_KEY"),
+        ),
+    )
     cors = aiohttp_cors.setup(
         app,
         defaults={
