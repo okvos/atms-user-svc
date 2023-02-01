@@ -3,6 +3,6 @@ from attr import define
 
 @define
 class APIResponse:
-    response: dict | None = ""
+    response: any = ""
     success: bool = True
-    error: str | None = None
+    error: bool | None = None
