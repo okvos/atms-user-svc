@@ -52,7 +52,7 @@ async def get_posts_by_user_id(user_id: int) -> list[Post]:
 async def like_post(user_id: int, post_id: int) -> bool:
     try:
         await insert_one(
-            DbName.FEED, "insert into post_like values (%s, %s)", (user_id, post_id)
+            DbName.FEED, "insert into post_like (user_id, post_id) values (%s, %s)", (user_id, post_id)
         )
     except IntegrityError:
         return False
@@ -83,4 +83,4 @@ async def are_posts_liked_by_user_id(post_ids: list[int], user_id: int) -> tuple
         f"select post_id from post_like where post_id in ({post_ids_string}) and user_id = %s",
         (*post_ids, user_id),
     )
-    return res
+    return res if res else ()
