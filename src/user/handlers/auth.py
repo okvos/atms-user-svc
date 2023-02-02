@@ -2,8 +2,7 @@ from aiohttp.web import Request, RouteTableDef
 from aiohttp_session import get_session, new_session
 from attr import define
 
-from src.user.db_user import (AccountNotFound, check_password,
-                              get_account_by_username)
+from src.user.db_user import AccountNotFound, check_password, get_account_by_username
 from src.user.models import APIResponse
 from src.user.util import structure_request_body
 

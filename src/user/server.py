@@ -18,6 +18,7 @@ load_dotenv()
 
 async def init():
     await create_pool(DbName.USER)
+    await create_pool(DbName.FEED)
 
     cookie_name = "atms_session_id"
 
@@ -27,6 +28,7 @@ async def init():
         EncryptedCookieStorage(
             cookie_name=cookie_name,
             secret_key=getenv("COOKIE_KEY"),
+            domain=".atmospheretest.site",
         ),
     )
     cors = aiohttp_cors.setup(
