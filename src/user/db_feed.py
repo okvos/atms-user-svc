@@ -25,13 +25,19 @@ class PostLike:
     user_id: int
 
 
+@define
+class Following:
+    followee_id: int
+    follower_id: int
+
+
 POST_FETCH_LIMIT = 10
 
 
 async def get_post_by_id(post_id: int) -> Post:
     post = await select_one(
         DbName.FEED,
-        "select `post_id`, `user_id`, `date`, `text` from post where post_id = %s",
+        "select `post_id`, `user_id`, `date`, `text` from `post` where `post_id` = %s",
         (post_id,),
     )
     if not post:
@@ -42,7 +48,7 @@ async def get_post_by_id(post_id: int) -> Post:
 async def get_posts_by_user_id(user_id: int) -> list[Post]:
     posts = await select_all(
         DbName.FEED,
-        "select `post_id`, `user_id`, `date`, `text` from post where user_id = %s limit %s",
+        "select `post_id`, `user_id`, `date`, `text` from `post` where `user_id` = %s limit %s",
         (user_id, POST_FETCH_LIMIT),
     )
     if not posts:
@@ -54,7 +60,7 @@ async def like_post(user_id: int, post_id: int) -> bool:
     try:
         await insert_one(
             DbName.FEED,
-            "insert into post_like (user_id, post_id) values (%s, %s)",
+            "insert into `post_like` (`user_id`, `post_id`) values (%s, %s)",
             (user_id, post_id),
         )
     except IntegrityError:
@@ -65,7 +71,7 @@ async def like_post(user_id: int, post_id: int) -> bool:
 async def unlike_post(user_id: int, post_id: int):
     await delete_one(
         DbName.FEED,
-        "delete from post_like where user_id = %s and post_id = %s",
+        "delete from `post_like` where `user_id` = %s and `post_id` = %s",
         (user_id, post_id),
     )
 
@@ -73,7 +79,7 @@ async def unlike_post(user_id: int, post_id: int):
 async def is_post_liked_by_user_id(post_id: int, user_id: int) -> bool:
     res = await select_one(
         DbName.FEED,
-        "select 1 from post_like where post_id = %s and user_id = %s",
+        "select 1 from `post_like` where `post_id` = %s and `user_id` = %s",
         (post_id, user_id),
     )
     return res is not None
@@ -83,7 +89,36 @@ async def are_posts_liked_by_user_id(post_ids: list[int], user_id: int) -> tuple
     post_ids_string = ",".join(["%s"] * len(post_ids))
     res = await select_all(
         DbName.FEED,
-        f"select post_id from post_like where post_id in ({post_ids_string}) and user_id = %s",
+        f"select `post_id` from `post_like` where `post_id` in ({post_ids_string}) and `user_id` = %s",
         (*post_ids, user_id),
     )
     return tuple(int(post[0]) for post in res if res)
+
+
+async def is_user_id_following_user_id(follower_id: int, following_id: int) -> bool:
+    is_following = await select_one(
+        DbName.FEED,
+        "select 1 from `following` where `follower_id` = %s and `following_id` = %s",
+        (follower_id, following_id),
+    )
+    return is_following is not None
+
+
+async def follow_user(user_id: int, following_id: int) -> bool:
+    try:
+        await insert_one(
+            DbName.FEED,
+            "insert into `following` (`follower_id`, `following_id`) values (%s, %s)",
+            (user_id, following_id),
+        )
+    except IntegrityError:
+        return False
+    return True
+
+
+async def unfollow_user(follower_id: int, following_id: int):
+    await delete_one(
+        DbName.FEED,
+        "delete from `following` where `follower_id` = %s and `following_id` = %s",
+        (follower_id, following_id),
+    )
