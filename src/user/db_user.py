@@ -3,7 +3,7 @@ from asyncio import get_running_loop
 from attr import define
 from bcrypt import checkpw, gensalt, hashpw
 
-from src.user.db import DbName, select_one
+from src.user.db import DbName, select_one, select_all
 
 
 @define
@@ -72,3 +72,13 @@ async def get_profile_by_username(username: str) -> Profile:
     if not profile:
         raise AccountNotFound(f"Profile: {username} not found")
     return Profile(*profile)
+
+
+async def get_profiles_by_user_ids(user_ids: set[int]) -> dict[int, Profile]:
+    profile_list_str = ",".join(["%s"] * len(user_ids))
+    profiles = await select_all(
+        DbName.USER,
+        f"select `user_id`, `username`, `bio`, `header_image_url` from profile where user_id in ({profile_list_str})",
+        tuple(user_ids),
+    )
+    return {profile[0]: Profile(*profile) for profile in profiles}
