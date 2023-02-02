@@ -1,7 +1,6 @@
 from aiohttp.web import Request, RouteTableDef
 
-from src.user.db_user import (AccountNotFound, get_account_by_id,
-                              get_profile_by_username)
+from src.user.db_user import AccountNotFound, get_account_by_id, get_profile_by_username
 from src.user.handlers.handlers import api_route_get
 from src.user.models import APIResponse
 

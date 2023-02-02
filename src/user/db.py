@@ -7,6 +7,7 @@ import aiomysql
 @unique
 class DbName(str, Enum):
     USER = "user"
+    FEED = "feed"
     # POST = "user"  # in a production environment these would be separate databases
 
 
@@ -43,6 +44,26 @@ async def select_all(db_name: DbName, query: str, values: tuple):
     pool.release(cxn)
 
     return res
+
+
+async def insert_one(db_name: DbName, query: str, values: tuple):
+    cxn, pool = await get_db(db_name)
+
+    curr = await cxn.cursor()
+    await curr.execute(query, values)
+
+    pool.release(cxn)
+    return True
+
+
+async def delete_one(db_name: DbName, query: str, values: tuple):
+    cxn, pool = await get_db(db_name)
+
+    curr = await cxn.cursor()
+    await curr.execute(query, values)
+
+    pool.release(cxn)
+    return True
 
 
 async def create_pool(db_name: DbName):

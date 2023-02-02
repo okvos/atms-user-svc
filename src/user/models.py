@@ -3,6 +3,12 @@ from attr import define
 
 @define
 class APIResponse:
-    response: dict
+    response: dict | str | None
     success: bool = True
-    error: bool | None = None
+    error: bool | None = False
+
+
+@define
+class UserSession:
+    user_id: int
+    username: str
