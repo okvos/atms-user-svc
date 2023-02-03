@@ -1,7 +1,10 @@
+import asyncio
+
 from attr import define
 from pymysql.err import IntegrityError
 
 from src.user.db import DbName, delete_one, insert_one, select_all, select_one
+from src.user.tasks.update_follower_count import update_follower_count
 
 
 @define
@@ -113,6 +116,7 @@ async def follow_user(user_id: int, following_id: int) -> bool:
         )
     except IntegrityError:
         return False
+    asyncio.create_task(update_follower_count(following_id))
     return True
 
 
@@ -122,3 +126,4 @@ async def unfollow_user(follower_id: int, following_id: int):
         "delete from `following` where `follower_id` = %s and `following_id` = %s",
         (follower_id, following_id),
     )
+    asyncio.create_task(update_follower_count(following_id))
