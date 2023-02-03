@@ -66,6 +66,16 @@ async def delete_one(db_name: DbName, query: str, values: tuple):
     return True
 
 
+async def update(db_name: DbName, query: str, values: tuple):
+    cxn, pool = await get_db(db_name)
+
+    curr = await cxn.cursor()
+    await curr.execute(query, values)
+
+    pool.release(cxn)
+    return True
+
+
 async def create_pool(db_name: DbName):
     db_pools[db_name] = await aiomysql.create_pool(
         host=getenv("DB_HOST"),
