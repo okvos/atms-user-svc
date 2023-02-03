@@ -8,6 +8,9 @@ from src.user.db_feed import (
     unlike_post,
     is_post_liked_by_user_id,
     are_posts_liked_by_user_id,
+    is_user_id_following_user_id,
+    follow_user,
+    unfollow_user,
 )
 from src.user.db_user import get_profiles_by_user_ids
 from src.user.handlers.handlers import api_route_delete, api_route_get, api_route_post
@@ -71,4 +74,42 @@ async def delete_like(request: Request) -> APIResponse:
 
     await unlike_post(sess.user_id, post_id)
 
+    return APIResponse({})
+
+
+@api_route_get(routes, "/user/{id}/follow", auth=True)
+async def is_following(request: Request) -> APIResponse:
+    user_id = int(request.match_info.get("id"))
+    sess: UserSession = request.get("session")
+
+    if user_id == sess.user_id:
+        return APIResponse("Can not follow self", error=True)
+
+    is_following_resp = await is_user_id_following_user_id(sess.user_id, user_id)
+    return APIResponse({"following": is_following_resp})
+
+
+@api_route_post(routes, "/user/{id}/follow", auth=True)
+async def follow_user_req(request: Request) -> APIResponse:
+
+    user_id = int(request.match_info.get("id"))
+    sess: UserSession = request.get("session")
+
+    if user_id == sess.user_id:
+        return APIResponse("Can not follow self", error=True)
+
+    did_follow = await follow_user(sess.user_id, user_id)
+    return APIResponse({}, success=did_follow)
+
+
+@api_route_delete(routes, "/user/{id}/follow", auth=True)
+async def unfollow_user_req(request: Request) -> APIResponse:
+
+    user_id = int(request.match_info.get("id"))
+    sess: UserSession = request.get("session")
+
+    if user_id == sess.user_id:
+        return APIResponse("Can not follow self", error=True)
+
+    await unfollow_user(sess.user_id, user_id)
     return APIResponse({})
