@@ -1,6 +1,6 @@
 from enum import Enum, unique
 from os import getenv
-
+from attr import fields_dict
 import aiomysql
 
 
@@ -12,6 +12,10 @@ class DbName(str, Enum):
 
 
 db_pools: dict[DbName, aiomysql.Pool] = {}
+
+
+def attrs_to_db_fields(cls) -> str:
+    return ', '.join(fields_dict(cls).keys())
 
 
 async def get_db(db_name: DbName) -> tuple[aiomysql.Connection, aiomysql.Pool] | None:
