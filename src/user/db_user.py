@@ -3,7 +3,7 @@ from asyncio import get_running_loop
 from attr import define
 from bcrypt import checkpw, gensalt, hashpw
 
-from src.user.db import DbName, select_one, select_all
+from src.user.db import DbName, select_one, select_all, attrs_to_db_fields
 
 
 @define
@@ -25,6 +25,12 @@ class Profile:
     username: str
     bio: str
     header_image_url: str
+    following_count: int
+    follower_count: int
+
+
+ACCOUNT_DB_KEYS = attrs_to_db_fields(Account)
+PROFILE_DB_KEYS = attrs_to_db_fields(Profile)
 
 
 async def encrypt_password(password: str) -> str:
@@ -66,7 +72,7 @@ async def get_account_by_username(username: str) -> Account:
 async def get_profile_by_username(username: str) -> Profile:
     profile = await select_one(
         DbName.USER,
-        "select `user_id`, `username`, `bio`, `header_image_url` from profile where username = %s",
+        f"select {PROFILE_DB_KEYS} from profile where username = %s",
         (username,),
     )
     if not profile:
@@ -78,7 +84,7 @@ async def get_profiles_by_user_ids(user_ids: set[int]) -> dict[int, Profile]:
     profile_list_str = ",".join(["%s"] * len(user_ids))
     profiles = await select_all(
         DbName.USER,
-        f"select `user_id`, `username`, `bio`, `header_image_url` from profile where user_id in ({profile_list_str})",
+        f"select {PROFILE_DB_KEYS} from profile where user_id in ({profile_list_str})",
         tuple(user_ids),
     )
     return {profile[0]: Profile(*profile) for profile in profiles}
