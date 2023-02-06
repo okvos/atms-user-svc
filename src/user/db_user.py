@@ -3,7 +3,7 @@ from asyncio import get_running_loop
 from attr import define
 from bcrypt import checkpw, gensalt, hashpw
 
-from src.user.db import DbName, select_one, select_all, attrs_to_db_fields
+from src.user.db import DbName, select_one, select_all, attrs_to_db_fields, update
 
 
 @define
@@ -88,3 +88,15 @@ async def get_profiles_by_user_ids(user_ids: set[int]) -> dict[int, Profile]:
         tuple(user_ids),
     )
     return {profile[0]: Profile(*profile) for profile in profiles}
+
+
+async def update_user_profile(user_id: int, username: str, bio: str):
+    await update(
+        DbName.FEED,
+        "update profile set bio = %s, username = %s where user_id = %s",
+        (
+            bio,
+            username,
+            user_id,
+        ),
+    )

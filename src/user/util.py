@@ -4,6 +4,9 @@ from cattr import structure
 from cattr.errors import ClassValidationError
 from orjson import loads
 
+BIO_MAX_CHARS = 255
+DISPLAY_NAME_MAX_CHARS = 30
+
 
 @define
 class InvalidRequest(Exception):

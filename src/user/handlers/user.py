@@ -1,14 +1,28 @@
 from aiohttp.web import Request, RouteTableDef
+from attr import define
 
-from src.user.db_user import AccountNotFound, get_account_by_id, get_profile_by_username
-from src.user.handlers.handlers import api_route_get
-from src.user.models import APIResponse
+from src.user.db_user import (
+    AccountNotFound,
+    get_account_by_id,
+    get_profile_by_username,
+    update_user_profile,
+)
+from src.user.handlers.handlers import api_route_get, api_route_put
+from src.user.models import APIResponse, UserSession
+from src.user.util import structure_request_body, BIO_MAX_CHARS, DISPLAY_NAME_MAX_CHARS
 
 routes = RouteTableDef()
 
 
+@define
+class UpdateProfileRequest:
+    bio: str
+    display_name: str
+    header_image_url: str
+
+
 @api_route_get(routes, "/user/{id}")
-async def main(request: Request) -> APIResponse:
+async def get_user(request: Request) -> APIResponse:
     user_id = int(request.match_info.get("id"))
     try:
         user = await get_account_by_id(user_id)
@@ -18,10 +32,34 @@ async def main(request: Request) -> APIResponse:
 
 
 @api_route_get(routes, "/profile/{username}")
-async def main(request: Request) -> APIResponse:
+async def get_profile(request: Request) -> APIResponse:
     username = str(request.match_info.get("username"))
     try:
         profile = await get_profile_by_username(username)
     except AccountNotFound:
         return APIResponse("Profile not found", error=True)
     return APIResponse({"profile": profile})
+
+
+@api_route_put(routes, "/user/profile", auth=True)
+async def update_profile(request: Request) -> APIResponse:
+    req_data: UpdateProfileRequest = await structure_request_body(
+        request, UpdateProfileRequest
+    )
+    sess: UserSession = request.get("session")
+
+    if req_data.bio > BIO_MAX_CHARS:
+        return APIResponse(
+            f"Bio should be {BIO_MAX_CHARS} characters or less", error=True
+        )
+
+    if req_data.display_name > DISPLAY_NAME_MAX_CHARS:
+        return APIResponse(
+            f"Display name should be {DISPLAY_NAME_MAX_CHARS} characters or less",
+            error=True,
+        )
+
+    # todo: add validation for header url, probably make it upload to s3 and then set header_img_url as a key
+
+    await update_user_profile(sess.user_id, req_data.display_name, req_data.bio)
+    return APIResponse({}, success=True)
