@@ -8,6 +8,7 @@ from aiohttp_session import setup
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from dotenv import load_dotenv
 
+from src.common.upload_s3 import init_s3
 from src.user.db import DbName, create_pool
 from src.user.db_user import get_account_by_id
 from src.user.handlers import routes as app_routes
@@ -19,6 +20,8 @@ load_dotenv()
 async def init():
     await create_pool(DbName.USER)
     await create_pool(DbName.FEED)
+
+    init_s3()
 
     cookie_name = "atms_session_id"
 

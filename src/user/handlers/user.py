@@ -10,7 +10,12 @@ from src.user.db_user import (
 )
 from src.user.handlers.handlers import api_route_get, api_route_put
 from src.user.models import APIResponse, UserSession
-from src.user.util import structure_request_body, BIO_MAX_CHARS, DISPLAY_NAME_MAX_CHARS
+from src.user.util import (
+    structure_request_body,
+    BIO_MAX_CHARS,
+    DISPLAY_NAME_MAX_CHARS,
+    is_upload_url_key_valid,
+)
 
 routes = RouteTableDef()
 
@@ -61,7 +66,10 @@ async def update_profile(request: Request) -> APIResponse:
             error=True,
         )
 
-    # todo: add validation for header url, probably make it upload to s3 and then set header_img_url as a key
+    if not is_upload_url_key_valid(req_data.header_image_url):
+        return APIResponse("Invalid profile header. Please try again.", error=True)
 
-    await update_user_profile(sess.user_id, req_data.display_name, req_data.bio)
+    await update_user_profile(
+        sess.user_id, req_data.display_name, req_data.bio, req_data.header_image_url
+    )
     return APIResponse({}, success=True)

@@ -119,13 +119,16 @@ async def get_profiles_by_user_ids(user_ids: set[int]) -> dict[int, Profile]:
     return {profile[0]: Profile(*profile) for profile in profiles}
 
 
-async def update_user_profile(user_id: int, username: str, bio: str):
+async def update_user_profile(
+    user_id: int, username: str, bio: str, header_image_url: str
+):
     await update(
         DbName.USER,
-        "update profile set bio = %s, username = %s where user_id = %s",
+        "update profile set bio = %s, username = %s, header_image_url = %s where user_id = %s",
         (
             bio,
             username,
+            header_image_url,
             user_id,
         ),
     )

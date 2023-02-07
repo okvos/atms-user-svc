@@ -18,6 +18,8 @@ EMAIL_REGEX = compile(
     r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 )
 
+UPLOAD_URL_KEY_REGEX = compile(r"([A-Za-z0-9\-_=/.])+(png|jpg|gif|jpeg|webp)")
+
 
 @define
 class InvalidRequest(Exception):
@@ -48,3 +50,7 @@ def is_username_valid(username: str) -> bool:
     if not (USERNAME_MIN_CHARS <= len(username) <= USERNAME_MAX_CHARS):
         return False
     return fullmatch(USERNAME_REGEX, username) is not None
+
+
+def is_upload_url_key_valid(key: str) -> bool:
+    return fullmatch(UPLOAD_URL_KEY_REGEX, key) is not None
