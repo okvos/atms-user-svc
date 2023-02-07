@@ -51,7 +51,7 @@ async def get_post_by_id(post_id: int) -> Post:
 async def get_posts_by_user_id(user_id: int) -> list[Post]:
     posts = await select_all(
         DbName.FEED,
-        "select `post_id`, `user_id`, `date`, `text` from `post` where `user_id` = %s limit %s",
+        "select `post_id`, `user_id`, `date`, `text` from `post` where `user_id` = %s order by `date` desc limit %s",
         (user_id, POST_FETCH_LIMIT),
     )
     if not posts:
