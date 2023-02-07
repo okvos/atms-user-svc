@@ -3,9 +3,20 @@ from attr import define
 from cattr import structure
 from cattr.errors import ClassValidationError
 from orjson import loads
+from re import compile, fullmatch
 
 BIO_MAX_CHARS = 255
 DISPLAY_NAME_MAX_CHARS = 30
+
+USERNAME_MAX_CHARS = 25
+USERNAME_MIN_CHARS = 2
+USERNAME_REGEX = compile("^[A-Za-z0-9]+(?:[ ;\*\.!_-][A-Za-z0-9!\.\*]+)*$")
+
+EMAIL_MIN_CHARS = 6
+EMAIL_MAX_CHARS = 255
+EMAIL_REGEX = compile(
+    r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+)
 
 
 @define
@@ -25,3 +36,15 @@ async def structure_request_body(request: Request, cl_type):
     if not req:
         print("NO")
     return req
+
+
+def is_email_valid(email: str) -> bool:
+    if not (EMAIL_MIN_CHARS <= len(email) <= EMAIL_MAX_CHARS):
+        return False
+    return fullmatch(EMAIL_REGEX, email) is not None
+
+
+def is_username_valid(username: str) -> bool:
+    if not (USERNAME_MIN_CHARS <= len(username) <= USERNAME_MAX_CHARS):
+        return False
+    return fullmatch(USERNAME_REGEX, username) is not None
