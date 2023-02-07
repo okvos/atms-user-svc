@@ -50,14 +50,16 @@ async def select_all(db_name: DbName, query: str, values: tuple):
     return res
 
 
-async def insert_one(db_name: DbName, query: str, values: tuple):
+async def insert_one(
+    db_name: DbName, query: str, values: tuple, return_last_id=False
+) -> bool | int:
     cxn, pool = await get_db(db_name)
 
     curr = await cxn.cursor()
     await curr.execute(query, values)
 
     pool.release(cxn)
-    return True
+    return curr.lastrowid if return_last_id else True
 
 
 async def delete_one(db_name: DbName, query: str, values: tuple):

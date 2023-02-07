@@ -3,7 +3,14 @@ from asyncio import get_running_loop
 from attr import define
 from bcrypt import checkpw, gensalt, hashpw
 
-from src.user.db import DbName, select_one, select_all, attrs_to_db_fields, update
+from src.user.db import (
+    DbName,
+    select_one,
+    select_all,
+    attrs_to_db_fields,
+    update,
+    insert_one,
+)
 
 
 @define
@@ -120,5 +127,34 @@ async def update_user_profile(user_id: int, username: str, bio: str):
             bio,
             username,
             user_id,
+        ),
+    )
+
+
+async def create_user_account(username: str, password: str, email_address: str) -> int:
+    user_id = await insert_one(
+        DbName.USER,
+        "insert into account (username, password, email_address) values(%s, %s, %s)",
+        (
+            username,
+            password,
+            email_address,
+        ),
+        return_last_id=True,
+    )
+    return user_id
+
+
+async def create_profile_for_account(
+    user_id: int, username: str, bio: str, header_image_url: str
+):
+    await insert_one(
+        DbName.USER,
+        "insert into profile (user_id, username, bio, header_image_url) values(%s, %s, %s, %s)",
+        (
+            user_id,
+            username,
+            bio,
+            header_image_url,
         ),
     )
