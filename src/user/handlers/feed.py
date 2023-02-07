@@ -1,5 +1,10 @@
-from aiohttp.web import Request, RouteTableDef
+from os import getenv
 
+from aiohttp.web import Request, RouteTableDef
+from attr import define
+from enum import unique, Enum
+
+from src.common.upload_s3 import generate_presigned_url
 from src.user.db_feed import (
     PostNotFound,
     get_post_by_id,
@@ -15,8 +20,28 @@ from src.user.db_feed import (
 from src.user.db_user import get_profiles_by_user_ids
 from src.user.handlers.handlers import api_route_delete, api_route_get, api_route_post
 from src.user.models import APIResponse, UserSession
+from secrets import token_urlsafe
+
+from src.user.util import structure_request_body
 
 routes = RouteTableDef()
+
+
+@define
+class UploadImageRequest:
+    @unique
+    class ImageTypes(str, Enum):
+        PNG = "png"
+        JPG = "jpg"
+        GIF = "gif"
+
+    image_type: ImageTypes
+
+
+@define
+class UploadImageResponse:
+    url: str
+    key: str
 
 
 @api_route_get(routes, "/post/{id}")
@@ -113,3 +138,23 @@ async def unfollow_user_req(request: Request) -> APIResponse:
 
     await unfollow_user(sess.user_id, user_id)
     return APIResponse({})
+
+
+@api_route_post(routes, "/upload-image", auth=True)
+async def upload_image(request: Request) -> APIResponse:
+    req_data: UploadImageRequest = await structure_request_body(
+        request, UploadImageRequest
+    )
+
+    random_image_id = token_urlsafe(16)
+    key = (
+        random_image_id[0:2]
+        + "/"
+        + random_image_id[2:4]
+        + "/"
+        + random_image_id
+        + f".{req_data.image_type.value}"
+    )
+
+    presigned_url = generate_presigned_url(getenv("AWS_UPLOAD_BUCKET"), key)
+    return APIResponse(UploadImageResponse(presigned_url, key))
