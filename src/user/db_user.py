@@ -69,6 +69,28 @@ async def get_account_by_username(username: str) -> Account:
     return Account(*user)
 
 
+async def get_user_id_by_username(username: str) -> int:
+    user = await select_one(
+        DbName.USER,
+        "select `user_id` from `account` where username = %s",
+        (username,),
+    )
+    if not user:
+        raise AccountNotFound(f"Username: {username} not found")
+    return user[0]
+
+
+async def get_profile_by_user_id(user_id: int) -> Profile:
+    profile = await select_one(
+        DbName.USER,
+        f"select {PROFILE_DB_KEYS} from profile where user_id = %s",
+        (user_id,),
+    )
+    if not profile:
+        raise AccountNotFound(f"Profile: Id {user_id} not found")
+    return Profile(*profile)
+
+
 async def get_profile_by_username(username: str) -> Profile:
     profile = await select_one(
         DbName.USER,
@@ -92,7 +114,7 @@ async def get_profiles_by_user_ids(user_ids: set[int]) -> dict[int, Profile]:
 
 async def update_user_profile(user_id: int, username: str, bio: str):
     await update(
-        DbName.FEED,
+        DbName.USER,
         "update profile set bio = %s, username = %s where user_id = %s",
         (
             bio,

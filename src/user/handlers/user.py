@@ -4,8 +4,9 @@ from attr import define
 from src.user.db_user import (
     AccountNotFound,
     get_account_by_id,
-    get_profile_by_username,
     update_user_profile,
+    get_user_id_by_username,
+    get_profile_by_user_id,
 )
 from src.user.handlers.handlers import api_route_get, api_route_put
 from src.user.models import APIResponse, UserSession
@@ -35,9 +36,10 @@ async def get_user(request: Request) -> APIResponse:
 async def get_profile(request: Request) -> APIResponse:
     username = str(request.match_info.get("username"))
     try:
-        profile = await get_profile_by_username(username)
+        user_id = await get_user_id_by_username(username)
     except AccountNotFound:
-        return APIResponse("Profile not found", error=True)
+        return APIResponse("User not found", error=True)
+    profile = await get_profile_by_user_id(user_id)
     return APIResponse({"profile": profile})
 
 
@@ -48,12 +50,12 @@ async def update_profile(request: Request) -> APIResponse:
     )
     sess: UserSession = request.get("session")
 
-    if req_data.bio > BIO_MAX_CHARS:
+    if len(req_data.bio) > BIO_MAX_CHARS:
         return APIResponse(
             f"Bio should be {BIO_MAX_CHARS} characters or less", error=True
         )
 
-    if req_data.display_name > DISPLAY_NAME_MAX_CHARS:
+    if len(req_data.display_name) > DISPLAY_NAME_MAX_CHARS:
         return APIResponse(
             f"Display name should be {DISPLAY_NAME_MAX_CHARS} characters or less",
             error=True,
