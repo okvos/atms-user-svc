@@ -150,7 +150,7 @@ async def unfollow_user_req(request: Request) -> APIResponse:
     return APIResponse({})
 
 
-@api_route_post(routes, "/feed/create", auth=True)
+@api_route_post(routes, "/post/create", auth=True)
 async def create_feed_post(request: Request) -> APIResponse:
     req_data: CreatePostRequest = await structure_request_body(
         request, CreatePostRequest
