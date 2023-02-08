@@ -16,13 +16,18 @@ from src.user.db_feed import (
     is_user_id_following_user_id,
     follow_user,
     unfollow_user,
+    create_post,
 )
 from src.user.db_user import get_profiles_by_user_ids
 from src.user.handlers.handlers import api_route_delete, api_route_get, api_route_post
 from src.user.models import APIResponse, UserSession
 from secrets import token_urlsafe
 
-from src.user.util import structure_request_body
+from src.user.util import (
+    structure_request_body,
+    POST_TEXT_MAX_CHARS,
+    POST_TEXT_MIN_CHARS,
+)
 
 routes = RouteTableDef()
 
@@ -42,6 +47,11 @@ class UploadImageRequest:
 class UploadImageResponse:
     url: str
     key: str
+
+
+@define
+class CreatePostRequest:
+    text: str
 
 
 @api_route_get(routes, "/post/{id}")
@@ -138,6 +148,23 @@ async def unfollow_user_req(request: Request) -> APIResponse:
 
     await unfollow_user(sess.user_id, user_id)
     return APIResponse({})
+
+
+@api_route_post(routes, "/feed/create", auth=True)
+async def create_feed_post(request: Request) -> APIResponse:
+    req_data: CreatePostRequest = await structure_request_body(
+        request, CreatePostRequest
+    )
+    sess: UserSession = request.get("session")
+
+    if not (POST_TEXT_MIN_CHARS <= len(req_data.text) <= POST_TEXT_MAX_CHARS):
+        return APIResponse(
+            f"Your post should be between {POST_TEXT_MIN_CHARS} and {POST_TEXT_MAX_CHARS} characters",
+            error=True,
+        )
+
+    post_id = await create_post(sess.user_id, req_data.text)
+    return APIResponse({"post_id": post_id})
 
 
 @api_route_post(routes, "/upload-image", auth=True)
