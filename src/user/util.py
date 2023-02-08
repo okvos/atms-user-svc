@@ -20,6 +20,9 @@ EMAIL_REGEX = compile(
 
 UPLOAD_URL_KEY_REGEX = compile(r"([A-Za-z0-9\-_=/.])+(png|jpg|gif|jpeg|webp)")
 
+POST_TEXT_MIN_CHARS = 1
+POST_TEXT_MAX_CHARS = 1000
+
 
 @define
 class InvalidRequest(Exception):

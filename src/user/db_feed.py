@@ -127,3 +127,13 @@ async def unfollow_user(follower_id: int, following_id: int):
         (follower_id, following_id),
     )
     asyncio.create_task(update_follower_count(following_id))
+
+
+async def create_post(user_id: int, text: str) -> int:
+    post_id = await insert_one(
+        DbName.FEED,
+        "insert into `post` (`user_id`, `date`, `text`) values (%s, UNIX_TIMESTAMP(), %s)",
+        (user_id, text),
+        return_last_id=True,
+    )
+    return post_id
