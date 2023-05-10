@@ -1,57 +1,46 @@
 from os import getenv
+from secrets import token_urlsafe
 
 from aiohttp.web import Request, RouteTableDef
-from attr import define
-from enum import unique, Enum
 
 from src.common.upload_s3 import generate_presigned_url
 from src.user.db_feed import (
+    PostComment,
     PostNotFound,
+    are_posts_liked_by_user_id,
+    create_comment,
+    create_post,
+    follow_user,
+    get_comments_by_post_id,
     get_post_by_id,
     get_posts_by_user_id,
-    like_post,
-    unlike_post,
     is_post_liked_by_user_id,
-    are_posts_liked_by_user_id,
     is_user_id_following_user_id,
-    follow_user,
+    like_post,
+    set_comment_visibility,
     unfollow_user,
-    create_post,
+    unlike_post,
 )
 from src.user.db_user import get_profiles_by_user_ids
 from src.user.handlers.handlers import api_route_delete, api_route_get, api_route_post
-from src.user.models import APIResponse, UserSession
-from secrets import token_urlsafe
-
+from src.user.models import APIResponse, ProfileSummary, UserSession
 from src.user.util import (
-    structure_request_body,
+    COMMENT_TEXT_MAX_CHARS,
+    COMMENT_TEXT_MIN_CHARS,
     POST_TEXT_MAX_CHARS,
     POST_TEXT_MIN_CHARS,
+    structure_request_body,
+)
+
+from .models.feed import (
+    Comment,
+    CreateCommentRequest,
+    CreatePostRequest,
+    UploadImageRequest,
+    UploadImageResponse,
 )
 
 routes = RouteTableDef()
-
-
-@define
-class UploadImageRequest:
-    @unique
-    class ImageTypes(str, Enum):
-        PNG = "png"
-        JPG = "jpg"
-        GIF = "gif"
-
-    image_type: ImageTypes
-
-
-@define
-class UploadImageResponse:
-    url: str
-    key: str
-
-
-@define
-class CreatePostRequest:
-    text: str
 
 
 @api_route_get(routes, "/post/{id}")
@@ -185,3 +174,62 @@ async def upload_image(request: Request) -> APIResponse:
 
     presigned_url = generate_presigned_url(getenv("AWS_UPLOAD_BUCKET"), key)
     return APIResponse(UploadImageResponse(presigned_url, key))
+
+
+@api_route_get(routes, "/post/{id}/comments")
+async def get_post_comments(request: Request) -> APIResponse:
+    post_id = int(request.match_info.get("id"))
+    try:
+        last_id = int(request.query.get("last_id"))
+    except TypeError:
+        last_id = None
+
+    comments = await get_comments_by_post_id(post_id, last_id)
+    if not comments:
+        return APIResponse({"comments": []})
+
+    user_profiles = await get_profiles_by_user_ids(
+        {comment.user_id for comment in comments}
+    )
+
+    converted_comments = [
+        Comment(
+            author=ProfileSummary(
+                comment.user_id, user_profiles.get(comment.user_id).username
+            ),
+            text=comment.text,
+            date=comment.date,
+        )
+        for comment in comments
+    ]
+
+    return APIResponse({"comments": converted_comments})
+
+
+@api_route_post(routes, "/post/{post_id}/comments", auth=True)
+async def create_post_comment(request: Request) -> APIResponse:
+    post_id = int(request.match_info.get("post_id"))
+    req_data: CreateCommentRequest = await structure_request_body(
+        request, CreateCommentRequest
+    )
+    sess: UserSession = request.get("session")
+
+    if not (COMMENT_TEXT_MIN_CHARS <= len(req_data.text) <= COMMENT_TEXT_MAX_CHARS):
+        return APIResponse(
+            f"Your comment should be between {COMMENT_TEXT_MIN_CHARS} and {COMMENT_TEXT_MAX_CHARS} characters",
+            error=True,
+        )
+
+    comment_id = await create_comment(post_id, sess.user_id, req_data.text)
+    return APIResponse({"comment_id": comment_id})
+
+
+@api_route_delete(routes, "/comment/{comment_id}", auth=True)
+async def delete_comment(request: Request) -> APIResponse:
+    comment_id = int(request.match_info.get("comment_id"))
+    sess: UserSession = request.get("session")
+
+    await set_comment_visibility(
+        comment_id, sess.user_id, PostComment.Visibility.DELETED
+    )
+    return APIResponse({})

@@ -5,14 +5,14 @@ from attr import define
 from src.user.db_user import (
     AccountNotFound,
     check_password,
+    create_profile_for_account,
+    create_user_account,
+    encrypt_password,
     get_account_by_username,
     get_user_id_by_username,
-    encrypt_password,
-    create_user_account,
-    create_profile_for_account,
 )
 from src.user.models import APIResponse
-from src.user.util import structure_request_body, is_username_valid, is_email_valid
+from src.user.util import is_email_valid, is_username_valid, structure_request_body
 
 from .handlers import api_route_get, api_route_put
 

@@ -1,9 +1,18 @@
 import asyncio
+from enum import Enum, unique
+from typing import Optional
 
 from attr import define
 from pymysql.err import IntegrityError
 
-from src.user.db import DbName, delete_one, insert_one, select_all, select_one
+from src.user.db import (
+    DbName,
+    attrs_to_db_fields,
+    delete_one,
+    insert_one,
+    select_all,
+    select_one,
+)
 from src.user.tasks.update_follower_count import update_follower_count
 
 
@@ -34,7 +43,27 @@ class Following:
     follower_id: int
 
 
+@define
+class PostComment:
+    @unique
+    class Visibility(int, Enum):
+        VISIBLE = 0
+        DELETED = 1
+        HIDDEN = 2
+
+    post_id: int
+    comment_id: int
+    user_id: int
+    text: str
+    date: int
+    visibility: Visibility
+
+
+COMMENT_DB_KEYS = attrs_to_db_fields(PostComment)
+
+
 POST_FETCH_LIMIT = 10
+COMMENT_FETCH_LIMIT = 5
 
 
 async def get_post_by_id(post_id: int) -> Post:
@@ -137,3 +166,42 @@ async def create_post(user_id: int, text: str) -> int:
         return_last_id=True,
     )
     return post_id
+
+
+async def get_comments_by_post_id(
+    post_id: int, last_id: Optional[int] = None
+) -> list[PostComment]:
+    limit = COMMENT_FETCH_LIMIT
+    query = f"select {COMMENT_DB_KEYS} from `post_comment` where `post_id` = %s"
+    values = [post_id]
+
+    # if no last_id is present, this is the first fetch for a post, so we only display the most recent comment
+    if not last_id:
+        limit = 1
+    else:
+        query += " and `comment_id` > %s"
+        values.append(last_id)
+    query += " limit %s"
+    values.append(limit)
+    comments = await select_all(DbName.FEED, query, tuple(values))
+    return [PostComment(*comment) for comment in comments]
+
+
+async def create_comment(post_id: int, user_id: int, text: str) -> int:
+    comment_id = await insert_one(
+        DbName.FEED,
+        "insert into `post_comment` (`user_id`, `date`, `text`, `post_id`) values (%s, UNIX_TIMESTAMP(), %s, %s)",
+        (user_id, text, post_id),
+        return_last_id=True,
+    )
+    return comment_id
+
+
+async def set_comment_visibility(
+    comment_id: int, user_id: int, visibility: PostComment.Visibility
+):
+    await insert_one(
+        DbName.FEED,
+        "update `post_comment` set `visibility` = %s where user_id = %s and comment_id = %s",
+        (visibility.value, user_id, comment_id),
+    )

@@ -1,7 +1,8 @@
 from enum import Enum, unique
 from os import getenv
-from attr import fields_dict
+
 import aiomysql
+from attr import fields_dict
 
 
 @unique
