@@ -14,6 +14,7 @@ from src.user.db import (
     select_one,
 )
 from src.user.tasks.update_follower_count import update_follower_count
+from src.user.tasks.update_post_counts import update_post_comment_count, update_post_like_count
 
 
 @define
@@ -27,6 +28,9 @@ class Post:
     user_id: int
     date: int
     text: str
+    num_comments: int
+    num_likes: int
+    num_shares: int
     is_liked: bool = False
     username: str = ""
 
@@ -69,7 +73,8 @@ COMMENT_FETCH_LIMIT = 5
 async def get_post_by_id(post_id: int) -> Post:
     post = await select_one(
         DbName.FEED,
-        "select `post_id`, `user_id`, `date`, `text` from `post` where `post_id` = %s",
+        "select `post_id`, `user_id`, `date`, `text`, `num_comments`, `num_likes`, `num_shares` from `post` where "
+        "`post_id` = %s",
         (post_id,),
     )
     if not post:
@@ -80,7 +85,8 @@ async def get_post_by_id(post_id: int) -> Post:
 async def get_posts_by_user_id(user_id: int) -> list[Post]:
     posts = await select_all(
         DbName.FEED,
-        "select `post_id`, `user_id`, `date`, `text` from `post` where `user_id` = %s order by `date` desc limit %s",
+        "select `post_id`, `user_id`, `date`, `text`, `num_comments`, `num_likes`, `num_shares` from `post` where "
+        "`user_id` = %s order by `date` desc limit %s",
         (user_id, POST_FETCH_LIMIT),
     )
     if not posts:
@@ -97,6 +103,8 @@ async def like_post(user_id: int, post_id: int) -> bool:
         )
     except IntegrityError:
         return False
+
+    asyncio.create_task(update_post_like_count(post_id))
     return True
 
 
@@ -106,6 +114,7 @@ async def unlike_post(user_id: int, post_id: int):
         "delete from `post_like` where `user_id` = %s and `post_id` = %s",
         (user_id, post_id),
     )
+    asyncio.create_task(update_post_like_count(post_id))
 
 
 async def is_post_liked_by_user_id(post_id: int, user_id: int) -> bool:
@@ -179,9 +188,9 @@ async def get_comments_by_post_id(
     if not last_id:
         limit = 1
     else:
-        query += " and `comment_id` > %s"
+        query += " and `comment_id` < %s"
         values.append(last_id)
-    query += " limit %s"
+    query += " order by `date` desc limit %s"
     values.append(limit)
     comments = await select_all(DbName.FEED, query, tuple(values))
     return [PostComment(*comment) for comment in comments]
@@ -194,6 +203,7 @@ async def create_comment(post_id: int, user_id: int, text: str) -> int:
         (user_id, text, post_id),
         return_last_id=True,
     )
+    asyncio.create_task(update_post_comment_count(post_id))
     return comment_id
 
 
