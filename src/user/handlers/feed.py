@@ -194,6 +194,7 @@ async def get_post_comments(request: Request) -> APIResponse:
 
     converted_comments = [
         Comment(
+            comment_id=comment.comment_id,
             author=ProfileSummary(
                 comment.user_id, user_profiles.get(comment.user_id).username
             ),

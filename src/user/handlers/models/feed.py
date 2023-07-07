@@ -29,6 +29,7 @@ class CreatePostRequest:
 
 @define
 class Comment:
+    comment_id: int
     author: ProfileSummary
     text: str
     date: int
