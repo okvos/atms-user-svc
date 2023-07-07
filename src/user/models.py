@@ -12,3 +12,9 @@ class APIResponse:
 class UserSession:
     user_id: int
     username: str
+
+
+@define
+class ProfileSummary:
+    user_id: int
+    username: str

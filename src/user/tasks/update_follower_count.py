@@ -1,4 +1,4 @@
-from src.user.db import select_one, DbName, update
+from src.user.db import DbName, select_one, update
 
 
 async def update_follower_count(user_id: int):

@@ -4,17 +4,17 @@ from attr import define
 from src.user.db_user import (
     AccountNotFound,
     get_account_by_id,
-    update_user_profile,
-    get_user_id_by_username,
     get_profile_by_user_id,
+    get_user_id_by_username,
+    update_user_profile,
 )
 from src.user.handlers.handlers import api_route_get, api_route_put
 from src.user.models import APIResponse, UserSession
 from src.user.util import (
-    structure_request_body,
     BIO_MAX_CHARS,
     DISPLAY_NAME_MAX_CHARS,
     is_upload_url_key_valid,
+    structure_request_body,
 )
 
 routes = RouteTableDef()

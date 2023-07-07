@@ -1,3 +1,4 @@
+import traceback
 from functools import wraps
 
 from aiohttp.web import RouteTableDef, json_response
@@ -36,6 +37,8 @@ def api_response(
                 return json_response(data=resp_dict, status=status)
 
             except Exception as e:
+                # print traceback even though we are catching error
+                traceback.print_exc()
                 status = 500
                 resp = APIResponse(str(e), success=False, error=True)
                 resp_dict = unstructure(resp)

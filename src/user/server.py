@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 from src.common.upload_s3 import init_s3
 from src.user.db import DbName, create_pool
-from src.user.db_user import get_account_by_id
 from src.user.handlers import routes as app_routes
 from src.user.middleware import middlewares
 
@@ -50,14 +49,6 @@ async def init():
         cors.add(route)
 
     await asyncio.gather(web._run_app(app))
-
-
-async def handle(request):
-    name = request.match_info.get("name", "Anonymous")
-    text = "Hello, " + name
-    print("Go")
-    print(await get_account_by_id(1))
-    return web.Response(text=text)
 
 
 if __name__ == "__main__":

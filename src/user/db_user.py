@@ -5,11 +5,11 @@ from bcrypt import checkpw, gensalt, hashpw
 
 from src.user.db import (
     DbName,
-    select_one,
-    select_all,
     attrs_to_db_fields,
-    update,
     insert_one,
+    select_all,
+    select_one,
+    update,
 )
 
 

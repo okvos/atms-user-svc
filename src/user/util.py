@@ -1,9 +1,10 @@
+from re import compile, fullmatch
+
 from aiohttp.web import Request
 from attr import define
 from cattr import structure
 from cattr.errors import ClassValidationError
 from orjson import loads
-from re import compile, fullmatch
 
 BIO_MAX_CHARS = 255
 DISPLAY_NAME_MAX_CHARS = 30
@@ -22,6 +23,8 @@ UPLOAD_URL_KEY_REGEX = compile(r"([A-Za-z0-9\-_=/.])+(png|jpg|gif|jpeg|webp)")
 
 POST_TEXT_MIN_CHARS = 1
 POST_TEXT_MAX_CHARS = 1000
+COMMENT_TEXT_MIN_CHARS = 2
+COMMENT_TEXT_MAX_CHARS = 300
 
 
 @define
